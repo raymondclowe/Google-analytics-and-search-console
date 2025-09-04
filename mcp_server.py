@@ -144,6 +144,9 @@ def secure_compare(a: str, b: str) -> bool:
     # Use hmac.compare_digest directly for constant-time comparison
     return hmac.compare_digest(a.encode(), b.encode())
 
+# Global variable to track simple mode
+SIMPLE_MODE = False
+
 # Configure FastMCP with stateless HTTP mode to avoid session ID issues
 mcp = FastMCP("ga4-gsc-mcp")
 # Set stateless HTTP mode to avoid session initialization issues
@@ -937,16 +940,16 @@ async def query_gsc_data(start_date: str, end_date: str, auth_identifier: str = 
 # async def query_unified_data(start_date: str, end_date: str, auth_identifier: str = "", domain: str = "", ga4_property_id: str = "", data_sources: list = ["ga4", "gsc"], debug: bool = False) -> dict:
 #     """
 #     Query both GA4 and GSC data for comprehensive cross-platform analysis.
-    
+   
 #     Business Use Cases:
 #     - Compare organic search performance (GSC) with actual user behavior (GA4)
 #     - Identify pages with high search impressions but low GA4 pageviews (optimization opportunity)
 #     - Cross-reference revenue data with search performance
 #     - Comprehensive SEO and monetization analysis
-    
+   
 #     This tool combines data from both platforms to provide insights that neither platform 
 #     alone can offer, ideal for holistic website performance analysis.
-    
+   
 #     Args:
 #         start_date: Start date in YYYY-MM-DD format (required)
 #         end_date: End date in YYYY-MM-DD format (required)
@@ -979,7 +982,6 @@ async def query_gsc_data(start_date: str, end_date: str, auth_identifier: str = 
 #         return {"status": "partial_success", "message": f"Retrieved data from {len(results)} source(s) with {len(errors)} error(s)", "errors": errors, "results": results, "todays_date": datetime.now().strftime('%Y-%m-%d')}
 #     return {"status": "success", "message": f"Retrieved data from {len(results)} source(s)", "results": results, "todays_date": datetime.now().strftime('%Y-%m-%d')}
 
-@mcp.tool()
 async def validate_ga4_parameters(dimensions: str = "", metrics: str = "") -> dict:
     """
     Validate GA4 dimensions and metrics before making API calls to avoid errors.
@@ -1121,7 +1123,6 @@ async def list_gsc_domains(auth_identifier: str = "", debug: bool = False) -> di
 
 # Focused GA4 Business-Intent Tools
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache page performance queries for 1 hour
 async def page_performance_ga4(start_date: str, end_date: str, auth_identifier: str = "", property_id: Union[str, List[str]] = "", domain_filter: str = "", debug: bool = False) -> dict:
     """
@@ -1159,7 +1160,6 @@ async def page_performance_ga4(start_date: str, end_date: str, auth_identifier: 
     
     return await query_ga4_data(start_date, end_date, auth_identifier, property_id, domain_filter, metrics, dimensions, debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache traffic sources queries for 1 hour
 async def traffic_sources_ga4(start_date: str, end_date: str, auth_identifier: str = "", property_id: Union[str, List[str]] = "", domain_filter: str = "", debug: bool = False) -> dict:
     """
@@ -1197,7 +1197,6 @@ async def traffic_sources_ga4(start_date: str, end_date: str, auth_identifier: s
     
     return await query_ga4_data(start_date, end_date, auth_identifier, property_id, domain_filter, metrics, dimensions, debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache audience analysis queries for 1 hour
 async def audience_analysis_ga4(start_date: str, end_date: str, auth_identifier: str = "", property_id: Union[str, List[str]] = "", domain_filter: str = "", debug: bool = False) -> dict:
     """
@@ -1235,7 +1234,6 @@ async def audience_analysis_ga4(start_date: str, end_date: str, auth_identifier:
     
     return await query_ga4_data(start_date, end_date, auth_identifier, property_id, domain_filter, metrics, dimensions, debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache revenue analysis queries for 1 hour
 async def revenue_analysis_ga4(start_date: str, end_date: str, auth_identifier: str = "", property_id: Union[str, List[str]] = "", domain_filter: str = "", debug: bool = False) -> dict:
     """
@@ -1275,7 +1273,6 @@ async def revenue_analysis_ga4(start_date: str, end_date: str, auth_identifier: 
 
 # Focused GSC Business-Intent Tools
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache GSC page performance queries for 1 hour
 async def page_performance_gsc(start_date: str, end_date: str, auth_identifier: str = "", domain: Union[str, List[str]] = "", debug: bool = False) -> dict:
     """
@@ -1311,7 +1308,6 @@ async def page_performance_gsc(start_date: str, end_date: str, auth_identifier: 
     
     return await query_gsc_data(start_date, end_date, auth_identifier, domain, dimensions, "web", debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache GSC query analysis for 1 hour
 async def query_analysis_gsc(start_date: str, end_date: str, auth_identifier: str = "", domain: Union[str, List[str]] = "", debug: bool = False) -> dict:
     """
@@ -1347,7 +1343,6 @@ async def query_analysis_gsc(start_date: str, end_date: str, auth_identifier: st
     
     return await query_gsc_data(start_date, end_date, auth_identifier, domain, dimensions, "web", debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache GSC page-query opportunities for 1 hour
 async def page_query_opportunities_gsc(start_date: str, end_date: str, auth_identifier: str = "", domain: Union[str, List[str]] = "", debug: bool = False) -> dict:
     """
@@ -1383,7 +1378,6 @@ async def page_query_opportunities_gsc(start_date: str, end_date: str, auth_iden
     
     return await query_gsc_data(start_date, end_date, auth_identifier, domain, dimensions, "web", debug)
 
-@mcp.tool()
 async def get_server_stats(include_details: bool = False) -> dict:
     """
     Get MCP server statistics and health information for monitoring and debugging.
@@ -1481,7 +1475,6 @@ async def get_server_stats(include_details: bool = False) -> dict:
         }
 
 
-@mcp.tool()
 async def invalidate_cache(cache_type: str = "domain", account: str = "") -> dict:
     """
     Invalidate server caches to force fresh data retrieval.
@@ -1583,7 +1576,6 @@ async def invalidate_cache(cache_type: str = "domain", account: str = "") -> dic
             'todays_date': datetime.now().strftime('%Y-%m-%d')
         }
 
-@mcp.tool()
 async def debug_request_headers() -> dict:
     """
     Debug tool to show what headers and authentication the server is receiving.
@@ -1629,6 +1621,871 @@ async def debug_request_headers() -> dict:
             'request_id': request_id,
             'todays_date': datetime.now().strftime('%Y-%m-%d')
         }
+
+# Simple Mode Resources and Prompts
+
+@mcp.resource("ga4://dimensions-metrics-reference")
+async def ga4_dimensions_metrics_reference() -> str:
+    """
+    Essential GA4 dimensions and metrics reference for business analytics.
+    
+    This resource provides a curated list of the most commonly used GA4 dimensions
+    and metrics that deliver actionable business insights.
+    """
+    return """
+# Google Analytics 4 (GA4) - Essential Dimensions & Metrics Reference
+
+## Most Important Dimensions for Business Analytics
+
+### Page/Content Analysis
+- **pagePath** - The path portion of the page URL (e.g., '/about', '/products/shoes')
+- **pageTitle** - The title of the page as it appears in the browser tab
+- **hostname** - The hostname of the website (useful for multi-domain tracking)
+- **landingPage** - The first page a user visits in their session
+
+### Traffic Source Analysis  
+- **sessionSource** - Where the traffic came from (google, facebook, direct, etc.)
+- **sessionMedium** - The marketing medium (organic, cpc, email, referral, etc.)
+- **sessionCampaign** - The marketing campaign name (for paid campaigns)
+
+### User Demographics & Technology
+- **country** - The user's country
+- **city** - The user's city
+- **deviceCategory** - Desktop, mobile, or tablet
+- **browser** - Chrome, Safari, Firefox, etc.
+- **operatingSystem** - Windows, macOS, Android, iOS, etc.
+
+### Time-based Analysis
+- **date** - YYYY-MM-DD format for daily analysis
+- **dayOfWeek** - Monday, Tuesday, etc.
+- **month** - January, February, etc.
+
+## Most Important Metrics for Business Analytics
+
+### Traffic & Engagement
+- **screenPageViews** - Number of times a page was viewed
+- **sessions** - Number of distinct sessions on your site
+- **totalUsers** - Total number of unique users 
+- **activeUsers** - Number of distinct users who visited your site
+- **userEngagementDuration** - Total time users spent engaged with your site
+- **averageSessionDuration** - Average length of a session
+- **bounceRate** - Percentage of single-page sessions
+- **engagementRate** - Percentage of engaged sessions
+
+### Revenue & Monetization
+- **totalAdRevenue** - Total ad revenue (for AdSense publishers)
+- **publisherAdClicks** - Number of ad clicks
+- **publisherAdImpressions** - Number of ad impressions
+- **totalRevenue** - Total revenue from all sources
+
+### Events & Conversions
+- **eventCount** - Total number of events triggered
+- **keyEvents** - Number of key events (conversions)
+
+## Common Business Use Cases
+
+### 1. Content Performance Analysis
+- Dimensions: pagePath, deviceCategory
+- Metrics: screenPageViews, sessions, userEngagementDuration, bounceRate
+
+### 2. Traffic Source Analysis  
+- Dimensions: sessionSource, sessionMedium, country
+- Metrics: sessions, totalUsers, engagementRate, screenPageViews
+
+### 3. Revenue Optimization
+- Dimensions: pagePath, sessionSource, deviceCategory
+- Metrics: totalAdRevenue, publisherAdClicks, screenPageViews, sessions
+
+### 4. Audience Analysis
+- Dimensions: country, deviceCategory, browser, operatingSystem
+- Metrics: totalUsers, sessions, averageSessionDuration, engagementRate
+
+## Important Notes
+- Always pair dimensions with relevant metrics
+- Use date dimension for time-series analysis
+- Combine traffic source dimensions for attribution analysis
+- Revenue metrics require proper AdSense/ecommerce setup
+"""
+
+@mcp.resource("gsc://dimensions-metrics-reference")
+async def gsc_dimensions_metrics_reference() -> str:
+    """
+    Essential Google Search Console dimensions and metrics reference for SEO analytics.
+    
+    This resource provides a curated list of the most commonly used GSC dimensions
+    and metrics that deliver actionable SEO insights.
+    """
+    return """
+# Google Search Console (GSC) - Essential Dimensions & Metrics Reference
+
+## Most Important Dimensions for SEO Analytics
+
+### Page Analysis
+- **page** - The URL of the page in search results (e.g., 'https://example.com/page')
+- **query** - The search query that showed your page (keywords users searched for)
+
+### Performance Segmentation
+- **country** - Country where the search originated (US, GB, CA, etc.)
+- **device** - Device type (desktop, mobile, tablet)
+- **searchAppearance** - How your page appeared in search (web result, image, video, etc.)
+
+### Time-based Analysis
+- **date** - YYYY-MM-DD format for daily SEO tracking
+
+## Metrics (Automatically Included)
+
+All GSC queries automatically include these essential metrics:
+
+### Search Performance Metrics
+- **clicks** - Number of times users clicked on your page from search results
+- **impressions** - Number of times your page appeared in search results  
+- **ctr** - Click-through rate (clicks ÷ impressions × 100)
+- **position** - Average ranking position in search results (1 = top position)
+
+## Common SEO Use Cases
+
+### 1. Page Performance Analysis
+- Dimensions: page, country, device
+- Focus on: pages with high impressions but low CTR, or good positions but low clicks
+
+### 2. Keyword Opportunity Discovery  
+- Dimensions: query, country, device
+- Focus on: queries with high impressions but poor positions (optimization opportunities)
+
+### 3. Content Optimization Opportunities
+- Dimensions: page, query
+- Focus on: page-query combinations with positions 11-30 (page 2-3 of Google)
+
+### 4. Mobile vs Desktop Performance
+- Dimensions: page, device
+- Focus on: performance differences between mobile and desktop
+
+### 5. Geographic Performance Analysis
+- Dimensions: page, country or query, country
+- Focus on: content performance in different markets
+
+## Key Performance Indicators (KPIs)
+
+### High-Priority Optimization Targets
+- **High impressions + Low CTR**: Need better titles/meta descriptions
+- **Positions 11-30**: Content improvement opportunities (page 2-3 of Google)
+- **High impressions + Position > 10**: Potential for significant traffic gains
+- **Low CTR on brand queries**: Potential SERP feature interference
+
+### Success Metrics
+- **CTR > 5%**: Generally good performance
+- **Position < 10**: First page of Google
+- **Position < 3**: Premium search visibility
+
+## Important Notes
+- Position is averaged across all impressions for the time period
+- CTR varies significantly by position and industry
+- Mobile and desktop performance can differ substantially
+- Focus on impressions > 100 for reliable insights
+- Use date dimension to track trends over time
+"""
+
+@mcp.resource("business://common-query-patterns")
+async def common_query_patterns() -> str:
+    """
+    Common business analytics query patterns for GA4 and GSC data.
+    
+    This resource provides proven query structures that deliver actionable
+    business insights for content optimization, SEO, and revenue analysis.
+    """
+    return """
+# Common Business Analytics Query Patterns
+
+## GA4 Query Patterns
+
+### 1. Content Performance Analysis
+**Purpose**: Identify your best and worst performing content
+**Time Period**: Last 30 days
+```
+Dimensions: pagePath, deviceCategory
+Metrics: screenPageViews, sessions, userEngagementDuration, bounceRate
+Sort by: screenPageViews (descending)
+```
+
+### 2. Traffic Source ROI Analysis  
+**Purpose**: Understand which channels drive the most valuable traffic
+**Time Period**: Last 7-30 days
+```
+Dimensions: sessionSource, sessionMedium, country
+Metrics: sessions, totalUsers, userEngagementDuration, bounceRate
+Sort by: sessions (descending)
+```
+
+### 3. Revenue Optimization
+**Purpose**: Maximize ad revenue by understanding top-earning pages
+**Time Period**: Last 30 days
+```
+Dimensions: pagePath, sessionSource, deviceCategory
+Metrics: totalAdRevenue, publisherAdClicks, screenPageViews, sessions
+Sort by: totalAdRevenue (descending)
+```
+
+### 4. Audience Demographics
+**Purpose**: Understand your audience for content personalization
+**Time Period**: Last 30 days
+```
+Dimensions: country, deviceCategory, browser, operatingSystem
+Metrics: totalUsers, sessions, averageSessionDuration, engagementRate
+Sort by: totalUsers (descending)
+```
+
+## GSC Query Patterns
+
+### 1. SEO Opportunity Discovery
+**Purpose**: Find pages with high potential that need optimization
+**Time Period**: Last 30 days
+```
+Dimensions: page, country, device
+Metrics: clicks, impressions, ctr, position (automatic)
+Focus on: impressions > 100 AND position > 10
+```
+
+### 2. Keyword Performance Analysis
+**Purpose**: Discover keyword opportunities and content gaps
+**Time Period**: Last 30 days
+```
+Dimensions: query, country, device
+Metrics: clicks, impressions, ctr, position (automatic)
+Focus on: impressions > 50 AND position > 10
+```
+
+### 3. Content Optimization Opportunities
+**Purpose**: Find specific page-keyword combinations to optimize
+**Time Period**: Last 30 days
+```
+Dimensions: page, query
+Metrics: clicks, impressions, ctr, position (automatic)
+Focus on: position between 11-30 (page 2-3 of Google)
+```
+
+### 4. Mobile vs Desktop Performance
+**Purpose**: Optimize for different device experiences
+**Time Period**: Last 30 days
+```
+Dimensions: page, device
+Metrics: clicks, impressions, ctr, position (automatic)
+Compare: mobile vs desktop performance differences
+```
+
+## Multi-Source Analysis Patterns
+
+### 1. Content Performance Cross-Reference
+**Purpose**: Compare search visibility with actual traffic
+**GA4**: pagePath + screenPageViews, sessions
+**GSC**: page + clicks, impressions, position
+**Analysis**: Pages with high GSC impressions but low GA4 pageviews need optimization
+
+### 2. Revenue vs Search Performance
+**Purpose**: Understand which search terms drive revenue
+**GA4**: pagePath, sessionSource + totalAdRevenue, screenPageViews
+**GSC**: page, query + clicks, impressions, position
+**Analysis**: High-revenue pages with poor search performance need SEO
+
+## Query Optimization Tips
+
+### Date Ranges
+- **7 days**: Quick trend analysis, recent changes
+- **30 days**: Standard business reporting, sufficient data volume  
+- **90 days**: Seasonal trends, longer-term patterns
+- **365 days**: Year-over-year comparisons, annual planning
+
+### Data Filtering Best Practices
+- **GA4**: Use property_id for specific sites, domain_filter for multi-domain setups
+- **GSC**: Use domain parameter for specific sites, leave empty for all domains
+- **Both**: Start with broader queries, then drill down with specific filters
+
+### Result Interpretation
+- **High impressions + Low CTR**: Title/meta description optimization needed
+- **Good position + Low clicks**: SERP features may be stealing clicks
+- **High GA4 traffic + Low GSC visibility**: Direct/social traffic, branded searches
+- **High GSC impressions + Low GA4 traffic**: Technical SEO issues, poor UX
+"""
+
+@mcp.prompt("analyze_traffic_revenue")
+async def analyze_traffic_revenue(timeframe: str = "30", property_id: str = "", domain: str = "") -> str:
+    """
+    Generate a comprehensive traffic vs revenue analysis prompt.
+    
+    This prompt guides AI analysis of GA4 data to identify revenue optimization opportunities
+    by understanding which pages and traffic sources generate the most value.
+    
+    Args:
+        timeframe: Number of days to analyze (default: 30)
+        property_id: Specific GA4 property ID (optional)
+        domain: Specific domain to analyze (optional)
+    """
+    from datetime import date, timedelta
+    
+    end_date = date.today()
+    start_date = end_date - timedelta(days=int(timeframe))
+    
+    property_filter = f', property_id="{property_id}"' if property_id else ""
+    domain_filter = f', domain_filter="{domain}"' if domain else ""
+    
+    return f"""
+# Traffic vs Revenue Analysis - {timeframe} Day Report
+
+## Objective
+Analyze your website's traffic patterns and revenue generation to identify optimization opportunities and understand which content and traffic sources provide the most business value.
+
+## Data Collection
+Use these queries to gather the necessary data:
+
+### 1. Page Revenue Performance
+```
+query_ga4_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="pagePath,deviceCategory",
+    metrics="screenPageViews,totalAdRevenue,sessions,userEngagementDuration"{property_filter}{domain_filter}
+)
+```
+
+### 2. Traffic Source Value
+```
+query_ga4_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="sessionSource,sessionMedium,country",
+    metrics="sessions,totalUsers,totalAdRevenue,screenPageViews"{property_filter}{domain_filter}
+)
+```
+
+## Analysis Framework
+
+### Revenue Analysis
+1. **Top Revenue Pages**: Identify pages generating the most ad revenue
+2. **Revenue per Session**: Calculate revenue efficiency (totalAdRevenue ÷ sessions)
+3. **Device Performance**: Compare revenue across desktop, mobile, tablet
+4. **Engagement vs Revenue**: Correlate userEngagementDuration with revenue
+
+### Traffic Source Analysis  
+1. **High-Value Sources**: Which sources bring users who generate revenue?
+2. **Geographic Performance**: Which countries provide the most valuable traffic?
+3. **Channel Efficiency**: Compare organic, paid, social, direct traffic value
+4. **Volume vs Value**: Balance high-traffic vs high-revenue sources
+
+### Optimization Opportunities
+1. **Undermonetized Traffic**: Pages with high traffic but low revenue
+2. **Revenue Concentration**: Is revenue too dependent on few pages/sources?
+3. **Device Optimization**: Are you losing revenue on mobile/desktop?
+4. **Geographic Expansion**: Countries with good traffic but untapped revenue
+
+## Key Metrics to Calculate
+- **Revenue per Page View**: totalAdRevenue ÷ screenPageViews
+- **Revenue per Session**: totalAdRevenue ÷ sessions  
+- **Revenue per User**: totalAdRevenue ÷ totalUsers
+- **Engagement Quality**: userEngagementDuration ÷ sessions
+
+## Questions to Answer
+1. Which 10 pages generate the most revenue? What makes them successful?
+2. Which traffic sources provide the highest-quality (revenue-generating) users?
+3. Are there high-traffic pages with surprisingly low revenue? Why?
+4. How does mobile revenue performance compare to desktop?
+5. Which geographic markets offer the best revenue potential?
+
+## Actionable Recommendations
+Based on your analysis, provide specific recommendations for:
+- Content optimization priorities
+- Traffic source investment decisions  
+- Technical improvements for revenue optimization
+- Geographic or device-specific strategies
+"""
+
+@mcp.prompt("discover_seo_opportunities")
+async def discover_seo_opportunities(timeframe: str = "30", domain: str = "") -> str:
+    """
+    Generate a comprehensive SEO opportunity discovery prompt.
+    
+    This prompt guides AI analysis of GSC data to identify pages and keywords
+    with high potential for traffic growth through optimization.
+    
+    Args:
+        timeframe: Number of days to analyze (default: 30)
+        domain: Specific domain to analyze (optional)
+    """
+    from datetime import date, timedelta
+    
+    end_date = date.today()
+    start_date = end_date - timedelta(days=int(timeframe))
+    
+    domain_filter = f', domain="{domain}"' if domain else ""
+    
+    return f"""
+# SEO Opportunity Discovery - {timeframe} Day Analysis
+
+## Objective
+Identify high-potential SEO opportunities by analyzing search performance data to find pages and keywords that could significantly increase your organic traffic with targeted optimization.
+
+## Data Collection
+Use these queries to gather comprehensive SEO intelligence:
+
+### 1. Page Performance Analysis
+```
+query_gsc_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="page,country,device",
+    search_type="web"{domain_filter}
+)
+```
+
+### 2. Keyword Opportunity Analysis
+```
+query_gsc_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="query,country,device",
+    search_type="web"{domain_filter}
+)
+```
+
+### 3. Page-Keyword Optimization Opportunities
+```
+query_gsc_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="page,query",
+    search_type="web"{domain_filter}
+)
+```
+
+## Analysis Framework
+
+### High-Priority Opportunities (Quick Wins)
+1. **Position 11-30 Rankings**: Pages ranking on page 2-3 of Google
+   - Filter: position between 11-30 AND impressions > 100
+   - Potential: Moving to page 1 can increase traffic by 5-10x
+
+2. **High Impressions, Low CTR**: Pages visible but not compelling
+   - Filter: impressions > 500 AND ctr < 2%
+   - Focus: Title and meta description optimization
+
+3. **Good Position, Poor CTR**: SERP optimization opportunities
+   - Filter: position < 10 AND ctr below industry average
+   - Focus: Featured snippets, title optimization, SERP features
+
+### Medium-Term Opportunities
+1. **Keyword Gaps**: High-volume keywords with poor rankings
+   - Filter: impressions > 200 AND position > 30
+   - Focus: Content creation and optimization
+
+2. **Device Performance Gaps**: Mobile vs desktop differences
+   - Compare mobile and desktop performance for same pages
+   - Focus: Mobile-specific optimization
+
+3. **Geographic Opportunities**: Country-specific performance
+   - Identify countries with high impressions but poor performance
+   - Focus: Localization and geo-targeting
+
+## Key Performance Indicators
+
+### Opportunity Scoring
+For each opportunity, calculate:
+- **Potential Traffic**: impressions × (target_ctr - current_ctr)
+- **Difficulty Score**: Current position (lower = easier)
+- **Impact Score**: Current impressions × potential improvement
+- **Priority**: High impact + Low difficulty = Top priority
+
+### CTR Benchmarks by Position
+- Position 1: 28-35% CTR
+- Position 2: 15-20% CTR  
+- Position 3: 10-15% CTR
+- Position 4-10: 2-10% CTR
+- Position 11+: <2% CTR
+
+## Optimization Actions
+
+### Quick Wins (1-2 weeks)
+1. **Title Optimization**: Improve titles for high-impression, low-CTR pages
+2. **Meta Descriptions**: Write compelling descriptions for high-position pages
+3. **Internal Linking**: Boost pages ranking positions 11-30
+
+### Content Optimization (1-2 months)
+1. **Content Enhancement**: Expand thin content for pages with good rankings
+2. **Keyword Integration**: Naturally integrate target keywords
+3. **User Intent Alignment**: Ensure content matches search intent
+
+### Technical SEO (2-3 months)
+1. **Page Speed**: Optimize loading times for high-opportunity pages
+2. **Mobile Experience**: Improve mobile usability and performance
+3. **Schema Markup**: Add structured data for SERP features
+
+## Questions to Answer
+1. Which 10 pages have the highest traffic potential with minimal effort?
+2. What keywords are you "almost ranking" for that could drive significant traffic?
+3. Are there systematic CTR issues across certain types of pages?
+4. Which geographic markets offer untapped SEO potential?
+5. How does your mobile SEO performance compare to desktop?
+
+## Expected Outcomes
+Provide specific, prioritized recommendations including:
+- Top 10 pages to optimize first (with expected traffic impact)
+- Keyword opportunities ranked by potential and difficulty
+- Technical SEO issues affecting multiple pages
+- Content creation opportunities based on keyword gaps
+- Timeline and resource requirements for implementation
+"""
+
+@mcp.prompt("analyze_page_performance")
+async def analyze_page_performance(timeframe: str = "30", source: str = "both", property_id: str = "", domain: str = "") -> str:
+    """
+    Generate a comprehensive page performance analysis prompt.
+    
+    This prompt guides AI analysis to understand how individual pages perform
+    across traffic, engagement, and search visibility metrics.
+    
+    Args:
+        timeframe: Number of days to analyze (default: 30)
+        source: Data source - "ga4", "gsc", or "both" (default: both)
+        property_id: Specific GA4 property ID (optional)
+        domain: Specific domain to analyze (optional)
+    """
+    from datetime import date, timedelta
+    
+    end_date = date.today()
+    start_date = end_date - timedelta(days=int(timeframe))
+    
+    property_filter = f', property_id="{property_id}"' if property_id else ""
+    domain_filter_ga4 = f', domain_filter="{domain}"' if domain else ""
+    domain_filter_gsc = f', domain="{domain}"' if domain else ""
+    
+    queries = []
+    
+    if source in ["ga4", "both"]:
+        queries.append(f"""
+### GA4 Page Performance Data
+```
+query_ga4_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="pagePath,deviceCategory",
+    metrics="screenPageViews,sessions,userEngagementDuration,bounceRate,totalUsers"{property_filter}{domain_filter_ga4}
+)
+```""")
+    
+    if source in ["gsc", "both"]:
+        queries.append(f"""
+### GSC Page Performance Data  
+```
+query_gsc_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="page,device",
+    search_type="web"{domain_filter_gsc}
+)
+```""")
+    
+    queries_section = "\n".join(queries)
+    
+    return f"""
+# Page Performance Analysis - {timeframe} Day Deep Dive
+
+## Objective
+Conduct a comprehensive analysis of individual page performance to identify top performers, underperformers, and optimization opportunities across traffic, engagement, and search visibility.
+
+## Data Collection
+{queries_section}
+
+## Analysis Framework
+
+### Page Performance Metrics
+
+#### Traffic & Engagement (GA4)
+1. **Page Views**: Total screenPageViews per page
+2. **User Engagement**: userEngagementDuration per page
+3. **Bounce Rate**: Percentage of single-page sessions
+4. **Device Performance**: How pages perform across desktop/mobile/tablet
+5. **Session Quality**: sessions and totalUsers per page
+
+#### Search Visibility (GSC)
+1. **Search Impressions**: How often pages appear in search results
+2. **Click Performance**: clicks and click-through rates
+3. **Ranking Positions**: Average position in search results
+4. **Device Search Performance**: Mobile vs desktop search performance
+
+### Performance Classification
+
+#### Star Performers (Top 10%)
+- High traffic AND high engagement
+- Strong search visibility with good CTRs
+- Consistent performance across devices
+- Analysis: What makes these pages successful?
+
+#### Hidden Gems (High Potential)
+- Good search impressions but low clicks (GSC)
+- High bounce rate but good traffic (GA4)
+- Strong desktop but weak mobile performance
+- Analysis: Quick optimization opportunities
+
+#### Underperformers (Bottom 20%)
+- Low traffic despite good search visibility
+- High bounce rates with poor engagement
+- Declining search positions
+- Analysis: Need significant improvement or consider removal
+
+#### Device-Specific Issues
+- Pages with mobile vs desktop performance gaps
+- Device-specific bounce rate problems
+- Mobile search vs mobile traffic discrepancies
+
+## Key Calculations
+
+### Performance Ratios
+- **Engagement Rate**: (1 - bounceRate) × 100
+- **Traffic Efficiency**: screenPageViews ÷ sessions
+- **Search-to-Traffic Ratio**: GA4 pageviews ÷ GSC clicks
+- **Mobile Performance Index**: mobile_metrics ÷ desktop_metrics
+
+### Opportunity Scores
+- **SEO Opportunity**: (impressions × position_improvement_potential) ÷ 100
+- **Engagement Opportunity**: potential_engagement_gain × current_traffic
+- **Device Optimization**: |mobile_performance - desktop_performance|
+
+## Analysis Questions
+
+### Content Performance
+1. Which pages have the highest user engagement and why?
+2. What characteristics do your top-performing pages share?
+3. Which pages have traffic but poor engagement (optimization candidates)?
+4. Are there pages with good search visibility but poor traffic conversion?
+
+### Technical Performance  
+1. Do mobile and desktop versions of pages perform similarly?
+2. Are there systematic bounce rate issues across certain page types?
+3. Which pages load slowly or have poor user experience indicators?
+
+### Search Performance
+1. Which pages rank well but have poor click-through rates?
+2. Are there pages with high impressions but low average positions?
+3. Do your pages perform differently in mobile vs desktop search?
+
+### Optimization Priorities
+1. Which pages offer the highest ROI for optimization efforts?
+2. Should any low-performing pages be improved, redirected, or removed?
+3. Which successful page elements should be replicated elsewhere?
+
+## Actionable Recommendations
+
+### Quick Fixes (1-2 weeks)
+- Title and meta description optimization for high-impression, low-CTR pages
+- Internal linking improvements for pages with good content but poor visibility
+- Mobile-specific issues affecting user experience
+
+### Content Optimization (1-2 months)
+- Content expansion for pages with good search visibility but poor engagement
+- User experience improvements for high-traffic, high-bounce pages
+- Device-specific content or layout optimization
+
+### Strategic Changes (2+ months)
+- Content consolidation or removal decisions for consistent underperformers
+- New content creation based on successful page patterns
+- Technical SEO improvements affecting multiple pages
+
+## Success Metrics
+Define specific, measurable outcomes:
+- Target engagement improvements for identified pages
+- Expected traffic increases from SEO optimizations
+- Bounce rate reduction goals for problematic pages
+- Mobile vs desktop performance parity objectives
+"""
+
+@mcp.prompt("multi_source_overview")
+async def multi_source_overview(timeframe: str = "30", property_id: str = "", domain: str = "") -> str:
+    """
+    Generate a comprehensive multi-source analysis prompt combining GA4 and GSC data.
+    
+    This prompt guides AI analysis to understand the complete picture of website
+    performance by combining traffic analytics with search performance data.
+    
+    Args:
+        timeframe: Number of days to analyze (default: 30)  
+        property_id: Specific GA4 property ID (optional)
+        domain: Specific domain to analyze (optional)
+    """
+    from datetime import date, timedelta
+    
+    end_date = date.today()
+    start_date = end_date - timedelta(days=int(timeframe))
+    
+    property_filter = f', property_id="{property_id}"' if property_id else ""
+    domain_filter_ga4 = f', domain_filter="{domain}"' if domain else ""
+    domain_filter_gsc = f', domain="{domain}"' if domain else ""
+    
+    return f"""
+# Multi-Source Website Performance Overview - {timeframe} Days
+
+## Objective
+Create a comprehensive understanding of your website's performance by combining Google Analytics 4 traffic data with Google Search Console search performance data to identify opportunities and insights that neither source alone can provide.
+
+## Data Collection Strategy
+
+### 1. GA4 Traffic & Engagement Data
+```
+query_ga4_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="pagePath,sessionSource,deviceCategory",
+    metrics="screenPageViews,sessions,totalUsers,userEngagementDuration,bounceRate"{property_filter}{domain_filter_ga4}
+)
+```
+
+### 2. GSC Search Performance Data
+```
+query_gsc_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="page,query,device",
+    search_type="web"{domain_filter_gsc}
+)
+```
+
+### 3. GA4 Revenue Analysis (if applicable)
+```
+query_ga4_data(
+    start_date="{start_date}",
+    end_date="{end_date}",
+    dimensions="pagePath,sessionSource",
+    metrics="totalAdRevenue,publisherAdClicks,screenPageViews,sessions"{property_filter}{domain_filter_ga4}
+)
+```
+
+## Cross-Platform Analysis Framework
+
+### 1. Search-to-Traffic Correlation
+**Purpose**: Understand how search visibility translates to actual traffic
+
+#### Key Comparisons:
+- **GSC Clicks vs GA4 Organic Sessions**: Should be roughly equal
+- **High GSC Impressions + Low GA4 Traffic**: SEO opportunity or technical issues
+- **High GA4 Traffic + Low GSC Visibility**: Non-search traffic sources dominant
+
+#### Analysis Questions:
+1. Which pages get good search impressions but poor traffic conversion?
+2. Are there pages with high GA4 traffic but poor search visibility?
+3. Do mobile and desktop show consistent patterns across both platforms?
+
+### 2. Traffic Source Intelligence
+**Purpose**: Understand the complete traffic acquisition picture
+
+#### Multi-Source Attribution:
+- **Organic Search Performance**: GSC data + GA4 organic traffic
+- **Paid vs Organic**: GA4 sessionMedium analysis  
+- **Direct Traffic Analysis**: High GA4 direct traffic might indicate strong brand search
+- **Social & Referral Impact**: Non-search traffic driving engagement
+
+#### Analysis Questions:
+1. What percentage of your traffic comes from organic search vs other sources?
+2. Which traffic sources provide the highest-quality users?
+3. Are there opportunities to improve search performance for high-value pages?
+
+### 3. Content Performance Insights
+**Purpose**: Identify content optimization opportunities using both datasets
+
+#### Performance Categories:
+- **SEO Stars**: High GSC performance + High GA4 engagement
+- **Hidden Gems**: Good GSC impressions + Poor GA4 metrics (optimization opportunity)
+- **Traffic Drivers**: High GA4 traffic + Poor GSC performance (diversified success)
+- **Underperformers**: Poor performance in both GSC and GA4
+
+#### Analysis Questions:
+1. Which content topics perform best across search and engagement?
+2. Are there pages with good search rankings but poor user engagement?
+3. Which pages show potential for improved search optimization?
+
+### 4. Device & User Experience Analysis
+**Purpose**: Optimize for different user contexts and devices
+
+#### Cross-Platform Device Analysis:
+- **Mobile Experience**: GSC mobile clicks vs GA4 mobile engagement
+- **Desktop Performance**: Compare desktop search and traffic patterns
+- **Device-Specific Issues**: Bounce rates, engagement times by device
+
+#### Analysis Questions:
+1. Is your mobile search performance reflected in mobile user engagement?
+2. Are there device-specific user experience issues?
+3. Which devices provide the best overall performance?
+
+## Key Performance Indicators (KPIs)
+
+### Primary Metrics
+- **Total Organic Traffic**: GA4 organic sessions + Direct traffic correlation
+- **Search Efficiency**: GSC clicks ÷ GA4 organic pageviews (should be close to 1.0)
+- **Overall Engagement**: Average session duration across traffic sources
+- **Revenue Performance**: Revenue per source vs search performance
+
+### Diagnostic Metrics
+- **Search Gap**: High GSC impressions but low GA4 traffic
+- **Engagement Gap**: High traffic but poor engagement metrics
+- **Device Gap**: Mobile vs desktop performance differences
+- **Source Diversity**: Traffic distribution across different channels
+
+## Analysis Outputs
+
+### Executive Summary
+Provide a high-level overview including:
+- Total website traffic and search performance
+- Primary traffic sources and their quality
+- Top performing content across both platforms
+- Major opportunities identified
+
+### Opportunity Matrix
+Categorize findings into:
+
+#### High Impact, Low Effort (Quick Wins)
+- Pages with good search impressions but poor CTR
+- Technical issues affecting search-to-traffic conversion
+- Mobile experience improvements
+
+#### High Impact, High Effort (Strategic Projects)
+- Content gaps identified through search data
+- Major user experience improvements
+- New content creation based on search opportunities
+
+#### Monitoring & Maintenance
+- Consistent performers to maintain
+- Seasonal or trending topics to watch
+- Performance tracking for implemented changes
+
+### Specific Recommendations
+
+#### SEO Improvements
+- Title and meta description optimization priorities
+- Content enhancement opportunities
+- Technical SEO issues affecting traffic
+
+#### User Experience Enhancements  
+- Pages with high traffic but poor engagement
+- Mobile-specific optimization needs
+- Site structure and navigation improvements
+
+#### Content Strategy
+- Topics with high search potential but low current performance
+- Content types that perform well across both search and engagement
+- Content gaps identified through competitive search analysis
+
+## Success Measurement
+
+### Short-term Goals (1-3 months)
+- Improve search-to-traffic conversion rates
+- Increase engagement metrics for high-traffic pages
+- Optimize mobile experience based on device performance gaps
+
+### Long-term Goals (3-12 months)
+- Increase overall organic traffic share
+- Improve revenue per session across traffic sources
+- Establish consistent top performance across both GA4 and GSC metrics
+
+## Reporting Schedule
+- **Weekly**: Monitor key changes and quick wins implementation
+- **Monthly**: Comprehensive cross-platform performance review
+- **Quarterly**: Strategic assessment and goal adjustment
+"""
 
 # Security middleware for HTTP mode with enhanced logging and rate limiting
 class BearerTokenMiddleware:
@@ -1796,33 +2653,64 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to (default: 8000)")
     parser.add_argument("--debug", action="store_true", help="Enable debug output for all routines")
     parser.add_argument("--key", type=str, help="API key for authentication (if not provided, a random key will be generated)")
+    parser.add_argument("--simple", action="store_true", help="Run in simple mode with minimal tools and enhanced documentation")
     args = parser.parse_args()
 
     # Generate API key if not provided
     api_key = args.key if args.key else secrets.token_urlsafe(32)
 
+    # Set simple mode flag and conditionally filter tools
+    SIMPLE_MODE = args.simple
+
+    # Conditionally register advanced tools based on mode
+    if not SIMPLE_MODE:
+        # Register advanced tools only in full mode
+        mcp.tool()(validate_ga4_parameters)
+        mcp.tool()(page_performance_ga4)
+        mcp.tool()(traffic_sources_ga4)
+        mcp.tool()(audience_analysis_ga4)
+        mcp.tool()(revenue_analysis_ga4)
+        mcp.tool()(page_performance_gsc)
+        mcp.tool()(query_analysis_gsc)
+        mcp.tool()(page_query_opportunities_gsc)
+        mcp.tool()(get_server_stats)
+        mcp.tool()(invalidate_cache)
+        mcp.tool()(debug_request_headers)
+
     def print_github_copilot_mcp_config(host, port, api_key, scheme="http"):
         # If host is 0.0.0.0, suggest localhost for local, or let user replace with public/tunnel hostname
         display_host = host if host != "0.0.0.0" else "localhost"
         url = f"{scheme}://{display_host}:{port}/mcp"
-        tools = [
-            "query_ga4_data",
-            "query_gsc_data", 
-            # "query_unified_data",
-            "list_ga4_properties",
-            "list_gsc_domains",
-            "page_performance_ga4",
-            "traffic_sources_ga4",
-            "audience_analysis_ga4", 
-            "revenue_analysis_ga4",
-            "page_performance_gsc",
-            "query_analysis_gsc",
-            "page_query_opportunities_gsc",
-            "get_server_stats",
-            "invalidate_cache",
-            "debug_request_headers"
-        ]
-        print("\n🔗 Sample mcpServers config for GitHub Copilot coding agent (RECOMMENDED - Local/Direct):\n")
+        
+        if SIMPLE_MODE:
+            tools = [
+                "list_ga4_properties",
+                "list_gsc_domains",
+                "query_ga4_data", 
+                "query_gsc_data"
+            ]
+            mode_description = "Simple Mode - Core Tools Only"
+        else:
+            tools = [
+                "query_ga4_data",
+                "query_gsc_data", 
+                # "query_unified_data",
+                "list_ga4_properties",
+                "list_gsc_domains",
+                "page_performance_ga4",
+                "traffic_sources_ga4",
+                "audience_analysis_ga4", 
+                "revenue_analysis_ga4",
+                "page_performance_gsc",
+                "query_analysis_gsc",
+                "page_query_opportunities_gsc",
+                "get_server_stats",
+                "invalidate_cache",
+                "debug_request_headers"
+            ]
+            mode_description = "Full Mode - All Tools Available"
+            
+        print(f"\n🔗 Sample mcpServers config for GitHub Copilot coding agent - {mode_description} (RECOMMENDED - Local/Direct):\n")
         print("{")
         print('  "mcpServers": {')
         print('    "ga4-gsc-mcp": {')
@@ -1831,6 +2719,20 @@ if __name__ == "__main__":
         print(f'      "headers": {{')
         print(f'        "Authorization": "Bearer {api_key}"')
         print(f'      }},')
+        
+        if SIMPLE_MODE:
+            print('      "resources": [')
+            print('        "ga4://dimensions-metrics-reference",')
+            print('        "gsc://dimensions-metrics-reference",')
+            print('        "business://common-query-patterns"')
+            print('      ],')
+            print('      "prompts": [')
+            print('        "analyze_traffic_revenue",')
+            print('        "discover_seo_opportunities",')
+            print('        "analyze_page_performance",')
+            print('        "multi_source_overview"')
+            print('      ],')
+        
         print('      "tools": [')
         for i, tool in enumerate(tools):
             comma = "," if i < len(tools) - 1 else ""
@@ -1839,7 +2741,11 @@ if __name__ == "__main__":
         print('    }')
         print('  }')
         print('}')
-        print("➡️  Use this for direct connections (localhost or when Authorization headers work)\n")
+        
+        if SIMPLE_MODE:
+            print("➡️  Simple mode with core tools + documentation resources and analysis prompts\n")
+        else:
+            print("➡️  Use this for direct connections (localhost or when Authorization headers work)\n")
         
         # Add Cloudflare tunnel configuration
         print("🔗 Alternative config for Cloudflare tunnels/proxies (RECOMMENDED - Custom Header):\n")
@@ -1851,6 +2757,20 @@ if __name__ == "__main__":
         print(f'      "headers": {{')
         print(f'        "X-API-Key": "{api_key}"')
         print(f'      }},')
+        
+        if SIMPLE_MODE:
+            print('      "resources": [')
+            print('        "ga4://dimensions-metrics-reference",')
+            print('        "gsc://dimensions-metrics-reference",')
+            print('        "business://common-query-patterns"')
+            print('      ],')
+            print('      "prompts": [')
+            print('        "analyze_traffic_revenue",')
+            print('        "discover_seo_opportunities",')
+            print('        "analyze_page_performance",')
+            print('        "multi_source_overview"')
+            print('      ],')
+        
         print('      "tools": [')
         for i, tool in enumerate(tools):
             comma = "," if i < len(tools) - 1 else ""
@@ -1869,6 +2789,20 @@ if __name__ == "__main__":
         print('    "ga4-gsc-mcp": {')
         print('      "type": "http",')
         print(f'      "url": "{url_with_key}",')
+        
+        if SIMPLE_MODE:
+            print('      "resources": [')
+            print('        "ga4://dimensions-metrics-reference",')
+            print('        "gsc://dimensions-metrics-reference",')
+            print('        "business://common-query-patterns"')
+            print('      ],')
+            print('      "prompts": [')
+            print('        "analyze_traffic_revenue",')
+            print('        "discover_seo_opportunities",')
+            print('        "analyze_page_performance",')
+            print('        "multi_source_overview"')
+            print('      ],')
+        
         print('      "tools": [')
         for i, tool in enumerate(tools):
             comma = "," if i < len(tools) - 1 else ""
@@ -1881,32 +2815,52 @@ if __name__ == "__main__":
     # Patch: Set a global debug flag and patch all tool functions to pass debug if not explicitly set
     DEBUG_FLAG = args.debug
 
-    # Patch all mcp.tool functions to inject debug if not set
-    import functools
-    for tool_name in [
-        "query_ga4_data",
-        "query_gsc_data",
-        # "query_unified_data",
-        "list_ga4_properties",
-        "list_gsc_domains",
-        "page_performance_ga4",
-        "traffic_sources_ga4", 
-        "audience_analysis_ga4",
-        "revenue_analysis_ga4",
-        "page_performance_gsc",
-        "query_analysis_gsc",
-        "page_query_opportunities_gsc",
-        "get_server_stats",
-        "invalidate_cache",
-        "debug_request_headers"
-    ]:
-        orig_func = getattr(mcp, tool_name, None)
-        if orig_func is not None:
-            async def wrapper(*a, __orig_func=orig_func, **kw):
-                if 'debug' not in kw:
-                    kw['debug'] = DEBUG_FLAG
-                return await __orig_func(*a, **kw)
-            setattr(mcp, tool_name, wrapper)
+    # Filter tools based on simple mode
+    if SIMPLE_MODE:
+        # In simple mode, only register the core 4 tools
+        simple_tools = [
+            "list_ga4_properties",
+            "list_gsc_domains", 
+            "query_ga4_data",
+            "query_gsc_data"
+        ]
+        
+        # Patch only the core tools to inject debug if not set
+        for tool_name in simple_tools:
+            orig_func = getattr(mcp, tool_name, None)
+            if orig_func is not None:
+                async def wrapper(*a, __orig_func=orig_func, **kw):
+                    if 'debug' not in kw:
+                        kw['debug'] = DEBUG_FLAG
+                    return await __orig_func(*a, **kw)
+                setattr(mcp, tool_name, wrapper)
+    else:
+        # Patch all mcp.tool functions to inject debug if not set
+        import functools
+        for tool_name in [
+            "query_ga4_data",
+            "query_gsc_data",
+            # "query_unified_data",
+            "list_ga4_properties",
+            "list_gsc_domains",
+            "page_performance_ga4",
+            "traffic_sources_ga4", 
+            "audience_analysis_ga4",
+            "revenue_analysis_ga4",
+            "page_performance_gsc",
+            "query_analysis_gsc",
+            "page_query_opportunities_gsc",
+            "get_server_stats",
+            "invalidate_cache",
+            "debug_request_headers"
+        ]:
+            orig_func = getattr(mcp, tool_name, None)
+            if orig_func is not None:
+                async def wrapper(*a, __orig_func=orig_func, **kw):
+                    if 'debug' not in kw:
+                        kw['debug'] = DEBUG_FLAG
+                    return await __orig_func(*a, **kw)
+                setattr(mcp, tool_name, wrapper)
 
     if args.http:
         print(f"Starting MCP HTTP server on {args.host}:{args.port}")
