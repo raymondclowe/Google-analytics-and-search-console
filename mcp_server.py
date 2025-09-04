@@ -982,7 +982,6 @@ async def query_gsc_data(start_date: str, end_date: str, auth_identifier: str = 
 #         return {"status": "partial_success", "message": f"Retrieved data from {len(results)} source(s) with {len(errors)} error(s)", "errors": errors, "results": results, "todays_date": datetime.now().strftime('%Y-%m-%d')}
 #     return {"status": "success", "message": f"Retrieved data from {len(results)} source(s)", "results": results, "todays_date": datetime.now().strftime('%Y-%m-%d')}
 
-@mcp.tool()
 async def validate_ga4_parameters(dimensions: str = "", metrics: str = "") -> dict:
     """
     Validate GA4 dimensions and metrics before making API calls to avoid errors.
@@ -1124,7 +1123,6 @@ async def list_gsc_domains(auth_identifier: str = "", debug: bool = False) -> di
 
 # Focused GA4 Business-Intent Tools
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache page performance queries for 1 hour
 async def page_performance_ga4(start_date: str, end_date: str, auth_identifier: str = "", property_id: Union[str, List[str]] = "", domain_filter: str = "", debug: bool = False) -> dict:
     """
@@ -1162,7 +1160,6 @@ async def page_performance_ga4(start_date: str, end_date: str, auth_identifier: 
     
     return await query_ga4_data(start_date, end_date, auth_identifier, property_id, domain_filter, metrics, dimensions, debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache traffic sources queries for 1 hour
 async def traffic_sources_ga4(start_date: str, end_date: str, auth_identifier: str = "", property_id: Union[str, List[str]] = "", domain_filter: str = "", debug: bool = False) -> dict:
     """
@@ -1200,7 +1197,6 @@ async def traffic_sources_ga4(start_date: str, end_date: str, auth_identifier: s
     
     return await query_ga4_data(start_date, end_date, auth_identifier, property_id, domain_filter, metrics, dimensions, debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache audience analysis queries for 1 hour
 async def audience_analysis_ga4(start_date: str, end_date: str, auth_identifier: str = "", property_id: Union[str, List[str]] = "", domain_filter: str = "", debug: bool = False) -> dict:
     """
@@ -1238,7 +1234,6 @@ async def audience_analysis_ga4(start_date: str, end_date: str, auth_identifier:
     
     return await query_ga4_data(start_date, end_date, auth_identifier, property_id, domain_filter, metrics, dimensions, debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache revenue analysis queries for 1 hour
 async def revenue_analysis_ga4(start_date: str, end_date: str, auth_identifier: str = "", property_id: Union[str, List[str]] = "", domain_filter: str = "", debug: bool = False) -> dict:
     """
@@ -1278,7 +1273,6 @@ async def revenue_analysis_ga4(start_date: str, end_date: str, auth_identifier: 
 
 # Focused GSC Business-Intent Tools
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache GSC page performance queries for 1 hour
 async def page_performance_gsc(start_date: str, end_date: str, auth_identifier: str = "", domain: Union[str, List[str]] = "", debug: bool = False) -> dict:
     """
@@ -1314,7 +1308,6 @@ async def page_performance_gsc(start_date: str, end_date: str, auth_identifier: 
     
     return await query_gsc_data(start_date, end_date, auth_identifier, domain, dimensions, "web", debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache GSC query analysis for 1 hour
 async def query_analysis_gsc(start_date: str, end_date: str, auth_identifier: str = "", domain: Union[str, List[str]] = "", debug: bool = False) -> dict:
     """
@@ -1350,7 +1343,6 @@ async def query_analysis_gsc(start_date: str, end_date: str, auth_identifier: st
     
     return await query_gsc_data(start_date, end_date, auth_identifier, domain, dimensions, "web", debug)
 
-@mcp.tool()
 @async_persistent_cache(expire_time=3600)  # Cache GSC page-query opportunities for 1 hour
 async def page_query_opportunities_gsc(start_date: str, end_date: str, auth_identifier: str = "", domain: Union[str, List[str]] = "", debug: bool = False) -> dict:
     """
@@ -1386,7 +1378,6 @@ async def page_query_opportunities_gsc(start_date: str, end_date: str, auth_iden
     
     return await query_gsc_data(start_date, end_date, auth_identifier, domain, dimensions, "web", debug)
 
-@mcp.tool()
 async def get_server_stats(include_details: bool = False) -> dict:
     """
     Get MCP server statistics and health information for monitoring and debugging.
@@ -1484,7 +1475,6 @@ async def get_server_stats(include_details: bool = False) -> dict:
         }
 
 
-@mcp.tool()
 async def invalidate_cache(cache_type: str = "domain", account: str = "") -> dict:
     """
     Invalidate server caches to force fresh data retrieval.
@@ -1586,7 +1576,6 @@ async def invalidate_cache(cache_type: str = "domain", account: str = "") -> dic
             'todays_date': datetime.now().strftime('%Y-%m-%d')
         }
 
-@mcp.tool()
 async def debug_request_headers() -> dict:
     """
     Debug tool to show what headers and authentication the server is receiving.
@@ -2672,6 +2661,21 @@ if __name__ == "__main__":
 
     # Set simple mode flag and conditionally filter tools
     SIMPLE_MODE = args.simple
+
+    # Conditionally register advanced tools based on mode
+    if not SIMPLE_MODE:
+        # Register advanced tools only in full mode
+        mcp.tool()(validate_ga4_parameters)
+        mcp.tool()(page_performance_ga4)
+        mcp.tool()(traffic_sources_ga4)
+        mcp.tool()(audience_analysis_ga4)
+        mcp.tool()(revenue_analysis_ga4)
+        mcp.tool()(page_performance_gsc)
+        mcp.tool()(query_analysis_gsc)
+        mcp.tool()(page_query_opportunities_gsc)
+        mcp.tool()(get_server_stats)
+        mcp.tool()(invalidate_cache)
+        mcp.tool()(debug_request_headers)
 
     def print_github_copilot_mcp_config(host, port, api_key, scheme="http"):
         # If host is 0.0.0.0, suggest localhost for local, or let user replace with public/tunnel hostname
